@@ -39,3 +39,5 @@ open index.html
 ## Credits
 
 Squeekchain: https://squeekchain.com (Sepolia testnet).
+
+squeekchain-project: 20ef9490-e374-4f3d-bc98-a077792763f6
