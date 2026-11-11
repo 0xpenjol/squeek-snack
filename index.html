@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Squeek Snack Dash — catch the falling SQK, dodge the cage bars, spend your snacks in the shop. A game on Squeekchain, the hamster-powered chain.">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>Squeek Snack Dash — a Squeekchain game</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --page:#1a0f2e;
+      --page2:#241640;
+      --panel:#2a1b4d;
+      --panel2:#33235c;
+      --line:rgba(255,255,255,.14);
+      --ink:#fdf6ec;
+      --muted:#c9b8d8;
+      --gold:#e9b94f;
+      --gold-deep:#b8860b;
+      --pink:#ff6fa5;
+      --green:#7ee2a0;
+      --red:#ff7a7a;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:"DM Sans",sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(900px 480px at 85% -10%,rgba(255,111,165,.16),transparent 60%),
+        radial-gradient(800px 500px at -10% 20%,rgba(233,185,79,.12),transparent 60%),
+        var(--page);
+      line-height:1.55;
+    }
+    a{color:inherit}
+    button{font:inherit;cursor:pointer}
+    .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+    /* ---- header / nav ---- */
+    header{
+      position:sticky;top:0;z-index:20;
+      background:rgba(26,15,46,.92);
+      backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{
+      max-width:920px;margin:0 auto;padding:12px 20px;
+      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    }
+    .logo{font-family:"Press Start 2P",monospace;font-size:16px;color:var(--gold);text-decoration:none}
+    .logo span{color:var(--pink)}
+    .tabs{display:flex;gap:6px;margin-left:auto}
+    .tab{
+      border:1px solid transparent;border-radius:999px;
+      padding:8px 14px;background:transparent;color:var(--muted);
+      font-weight:800;font-size:13px;
+    }
+    .tab.on{background:var(--panel);border-color:var(--line);color:var(--ink)}
+    .bank-pill{
+      display:flex;align-items:center;gap:6px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(233,185,79,.15);border:1px solid rgba(233,185,79,.45);
+      color:var(--gold);font-weight:800;font-size:13px;white-space:nowrap;
+    }
+    .bank-pill .coin{
+      width:16px;height:16px;border-radius:50%;
+      background:radial-gradient(circle at 35% 30%,#ffe9a8,#e9b94f 60%,#c98a1b);
+      display:inline-grid;place-items:center;color:#7a5510;font-size:10px;font-weight:800;
+    }
+    .wallet-chip{
+      display:flex;align-items:center;gap:6px;
+      padding:7px 11px 6px;border-radius:9px;border:0;
+      background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#241303;
+      font-family:"Press Start 2P",monospace;font-weight:400;font-size:9px;white-space:nowrap;
+      box-shadow:0 3px 0 #7a5510;
+      transition:transform .12s ease,box-shadow .12s ease;
+    }
+    .wallet-chip:hover{transform:translateY(-1px)}
+    .wallet-chip:active{transform:translateY(2px);box-shadow:0 1px 0 #7a5510}
+    /* ---- hero ---- */
+    .hero{
+      display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:center;
+      padding:38px 0 10px;
+    }
+    .hero h1{
+      margin:0;font-family:"Press Start 2P",monospace;font-weight:400;
+      font-size:clamp(24px,5.4vw,40px);line-height:1.4;
+    }
+    .hero h1 em{font-style:normal;color:var(--gold)}
+    .hero h1 i{font-style:normal;color:var(--pink)}
+    .lede{margin:16px 0 0;font-size:17px;color:var(--muted);max-width:48ch}
+    .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:26px}
+    .play-btn{
+      display:inline-block;text-decoration:none;text-align:center;
+      padding:16px 32px 15px;border-radius:12px;
+      font-family:"Press Start 2P",monospace;font-size:15px;
+      color:#241303;background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+      box-shadow:0 6px 0 #7a5510,0 14px 26px rgba(0,0,0,.4);
+      transition:transform .12s ease,box-shadow .12s ease;
+    }
+    .play-btn:hover{transform:translateY(-2px)}
+    .play-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #7a5510}
+    .ghost-btn{
+      display:inline-block;text-decoration:none;
+      padding:14px 20px;border-radius:12px;
+      border:1px solid var(--line);background:var(--panel);
+      font-weight:800;font-size:14px;
+    }
+    .status-pill{
+      display:inline-flex;align-items:center;gap:8px;
+      margin-top:18px;padding:8px 12px;border-radius:999px;
+      background:var(--panel);border:1px solid var(--line);
+      font-size:13px;font-weight:700;color:var(--muted);
+    }
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+    .dot.run{background:var(--green);box-shadow:0 0 0 4px rgba(126,226,160,.18)}
+    .dot.nap{background:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.18)}
+    .hero-art{
+      background:linear-gradient(180deg,#3a2566,#241640);
+      border:1px solid var(--line);border-radius:22px;
+      padding:24px 18px 12px;text-align:center;
+      box-shadow:0 20px 44px rgba(0,0,0,.45);
+    }
+    .hero-art img{width:min(100%,230px);height:auto}
+    .hero-art figcaption{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;padding:10px 0 6px}
+    /* ---- stat chips ---- */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:30px 0 4px}
+    .stat{
+      background:var(--panel);border:1px solid var(--line);border-radius:14px;
+      padding:14px 12px;text-align:center;
+    }
+    .stat span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+    .stat strong{display:block;margin-top:6px;font-family:"Press Start 2P",monospace;font-size:13px;font-weight:400}
+    .live-note{font-size:12px;color:var(--muted);text-align:center;margin:8px 0 0}
+    .checkin{
+      margin:22px 0 0;
+      padding:18px 18px 16px;
+      border-radius:16px;
+      background:linear-gradient(180deg,rgba(233,185,79,.12),rgba(233,185,79,.04));
+      border:1px solid rgba(233,185,79,.45);
+      text-align:center;
+    }
+    .checkin h2{font-size:15px}
+    .checkin .streak{margin-top:8px;font-size:13px;font-weight:800;color:var(--muted)}
+    .checkin .streak strong{color:var(--gold);font-family:"Press Start 2P",monospace;font-size:15px;margin:0 2px}
+    .checkin-dots{display:flex;gap:8px;justify-content:center;margin:14px 0}
+    .checkin-dots i{width:13px;height:13px;border-radius:50%;border:2px solid rgba(233,185,79,.5);display:block}
+    .checkin-dots i.hit{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(233,185,79,.7)}
+    .checkin-dots i.today{border-color:#fff}
+    .checkin .play-btn{display:block;width:100%;border:0;cursor:pointer}
+    .checkin .play-btn:disabled{background:rgba(255,255,255,.12);color:var(--muted);box-shadow:none;cursor:default;transform:none}
+    .checkin-note{margin:10px 0 0;font-size:12px;color:var(--muted);min-height:16px}
+    /* ---- sections ---- */
+    section{padding:36px 0 4px}
+    h2{margin:0 0 6px;font-family:"Press Start 2P",monospace;font-weight:400;font-size:17px;line-height:1.5}
+    h2 .accent{color:var(--gold)}
+    .section-sub{margin:0 0 18px;color:var(--muted);max-width:64ch}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .card{
+      background:var(--panel);border:1px solid var(--line);border-radius:16px;
+      padding:18px 16px;
+    }
+    .card .ico{font-size:26px;line-height:1}
+    .card h3{margin:12px 0 4px;font-size:15px}
+    .card p{margin:0;font-size:14px;color:var(--muted)}
+    .card .num{
+      display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;
+      background:var(--gold);color:#241303;font-family:"Press Start 2P",monospace;font-size:13px;
+    }
+    /* ---- game picker ---- */
+    .games{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .game-card{
+      background:var(--panel);border:1px solid var(--line);border-radius:18px;
+      padding:20px;display:flex;flex-direction:column;gap:10px;
+      transition:transform .15s ease,border-color .15s ease;
+    }
+    .game-card:hover{transform:translateY(-3px);border-color:rgba(233,185,79,.55)}
+    .game-card img{width:120px;height:auto;align-self:center}
+    .game-card h3{margin:0;font-family:"Press Start 2P",monospace;font-size:14px;line-height:1.5}
+    .game-card p{margin:0;font-size:14px;color:var(--muted);flex:1}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{
+      font-size:11px;font-weight:800;letter-spacing:.04em;
+      padding:5px 9px;border-radius:999px;
+      background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--muted);
+    }
+    .chip.gold{background:rgba(233,185,79,.15);border-color:rgba(233,185,79,.45);color:var(--gold)}
+    .game-card .play-btn{padding:13px 20px 12px;font-size:12px;text-align:center}
+    .game-card .ghost-btn{text-align:center}
+    /* ---- inventory / shop ---- */
+    .panel-box{
+      background:var(--panel);border:1px solid var(--line);border-radius:18px;
+      padding:20px;margin-bottom:14px;
+    }
+    .big-bank{
+      display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    }
+    .big-bank strong{font-family:"Press Start 2P",monospace;font-size:30px;color:var(--gold)}
+    .big-bank span{color:var(--muted);font-weight:700}
+    .inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+    .inv-cell{
+      background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+      padding:12px 10px;text-align:center;
+    }
+    .inv-cell span{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+    .inv-cell strong{display:block;margin-top:5px;font-size:19px}
+    .badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .badge{
+      background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+      padding:14px 12px;text-align:center;
+    }
+    .badge .b-ico{font-size:24px;line-height:1;filter:grayscale(1);opacity:.45}
+    .badge.got .b-ico{filter:none;opacity:1}
+    .badge h4{margin:8px 0 2px;font-size:13px}
+    .badge p{margin:0;font-size:12px;color:var(--muted)}
+    .badge.got{border-color:rgba(233,185,79,.5)}
+    .badge.got h4{color:var(--gold)}
+    .shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .shop-item{
+      background:var(--panel2);border:1px solid var(--line);border-radius:14px;
+      padding:16px;display:flex;flex-direction:column;gap:8px;
+    }
+    .shop-item .swatch{
+      width:54px;height:54px;border-radius:12px;background:var(--panel);
+      display:grid;place-items:center;overflow:hidden;
+    }
+    .shop-item .swatch img{width:44px;height:auto}
+    .shop-item h4{margin:0;font-size:15px}
+    .shop-item p{margin:0;font-size:13px;color:var(--muted);flex:1}
+    .price-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .price{font-weight:800;color:var(--gold)}
+    .buy-btn{
+      border:0;border-radius:9px;padding:9px 16px;
+      background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+      color:#241303;font-weight:800;font-size:13px;
+      box-shadow:0 3px 0 #7a5510;
+    }
+    .buy-btn:active{transform:translateY(2px);box-shadow:none}
+    .buy-btn:disabled{opacity:.45;box-shadow:none;cursor:default}
+    .buy-btn.owned{background:rgba(126,226,160,.18);color:var(--green);box-shadow:none}
+    .buy-btn.equipped{background:rgba(255,111,165,.2);color:var(--pink);box-shadow:none}
+    .count-tag{font-size:12px;font-weight:800;color:var(--muted)}
+    .note{
+      font-size:13px;color:var(--muted);
+      background:rgba(255,255,255,.05);border:1px dashed var(--line);
+      border-radius:12px;padding:12px 14px;margin-top:14px;
+    }
+    .toast{
+      position:fixed;left:50%;bottom:22px;transform:translate(-50%,80px);
+      z-index:50;background:var(--ink);color:#241303;
+      font-weight:800;font-size:14px;padding:12px 20px;border-radius:999px;
+      box-shadow:0 12px 30px rgba(0,0,0,.5);
+      transition:transform .25s ease;pointer-events:none;max-width:90vw;text-align:center;
+    }
+    .toast.show{transform:translate(-50%,0)}
+    footer{
+      margin-top:46px;padding:24px 0 36px;
+      border-top:1px solid var(--line);
+      font-size:13px;color:var(--muted);
+      display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;
+    }
+    footer a{font-weight:700}
+    [hidden]{display:none!important}
+    @media (max-width:680px){
+      .hero{grid-template-columns:1fr;gap:18px;padding-top:24px}
+      .hero-art{order:-1;padding:16px 12px 8px}
+      .hero-art img{width:160px}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .cards{grid-template-columns:1fr}
+      .games{grid-template-columns:1fr}
+      .inv-grid{grid-template-columns:repeat(2,1fr)}
+      .badge-grid{grid-template-columns:repeat(2,1fr)}
+      .shop-grid{grid-template-columns:1fr}
+      .tabs{margin-left:0}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <a class="logo" href="#" data-tab="home">SQUEEK<span>SNACK</span> DASH</a>
+      <div class="tabs" role="tablist">
+        <button class="tab on" data-tab="home" type="button">Home</button>
+        <button class="tab" data-tab="inventory" type="button">Inventory</button>
+        <button class="tab" data-tab="shop" type="button">Shop</button>
+      </div>
+      <button class="wallet-chip" id="walletChip" type="button">CONNECT</button>
+      <div class="bank-pill" title="Your snack coins — earned by playing"><span class="coin">S</span><span id="bankPill">0</span></div>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <main>
+      <!-- ============ HOME ============ -->
+      <div id="tab-home">
+        <div class="hero">
+          <div>
+            <h1>CATCH THE<br><em>SNACKS.</em><br><i>DODGE THE CAGE.</i></h1>
+            <p class="lede">Squeektoshi the hamster is hungry. Move him left and right, catch the falling SQK, seeds and berries — and don't let the cage bars catch you.</p>
+            <div class="cta-row">
+              <a class="play-btn" href="play.html">▶&nbsp; PLAY NOW</a>
+              <a class="ghost-btn" href="#what">What is Squeekchain?</a>
+            </div>
+            <div class="status-pill"><span class="dot" id="statusDot"></span><span id="statusText">Checking on Squeektoshi…</span></div>
+          </div>
+          <figure class="hero-art" style="margin:0">
+            <img src="hamster-blocks.png" alt="Squeektoshi the hamster with sunglasses, holding a basket, drawn in blocks" width="448" height="576">
+            <figcaption>Squeektoshi · professional snacker</figcaption>
+          </figure>
+        </div>
+
+        <div class="stats" aria-live="polite">
+          <div class="stat"><span>Block</span><strong id="statBlock">—</strong></div>
+          <div class="stat"><span>Round</span><strong id="statRound">—</strong></div>
+          <div class="stat"><span>Wheel</span><strong id="statWheel">—</strong></div>
+          <div class="stat"><span>Hamster</span><strong id="statStatus">—</strong></div>
+        </div>
+        <p class="live-note" id="liveNote">Live from the real wheel — updates every 30 seconds.</p>
+
+        <section class="checkin" id="checkinCard">
+          <h2>DAILY <span class="accent">CHECK-IN</span></h2>
+          <div class="streak">🔥 <strong id="streakNum">0</strong> day streak</div>
+          <p class="section-sub" style="margin-top:6px">Come back every day — the longer your streak, the bigger the snack coins.</p>
+          <div class="checkin-dots" id="checkinDots"></div>
+          <button class="play-btn" id="checkinBtn" type="button">CHECK IN</button>
+          <p class="checkin-note" id="checkinNote"></p>
+        </section>
+
+        <section id="what">
+          <h2>WHAT IS <span class="accent">SQUEEKCHAIN?</span></h2>
+          <p class="section-sub">A blockchain powered by a real hamster. Yes, really.</p>
+          <div class="cards">
+            <div class="card">
+              <span class="ico">🐹</span>
+              <h3>A hamster runs the chain</h3>
+              <p>Squeektoshi runs on his giant wheel, the WHEELY9000. Every step he takes is real work — measured live, right now.</p>
+            </div>
+            <div class="card">
+              <span class="ico">🧱</span>
+              <h3>Work becomes blocks</h3>
+              <p>Every 10 minutes, a round settles: his wheel work turns into Squeek blocks. Nap rounds make nothing. Sprint rounds make many.</p>
+            </div>
+            <div class="card">
+              <span class="ico">🪙</span>
+              <h3>Blocks pay out SQK</h3>
+              <p>Each block issues SQK, shared between everyone holding Squeek NFTs — the harder the hamster works, the more there is to share.</p>
+            </div>
+          </div>
+          <p class="note">Squeekchain runs on the Sepolia testnet, so everything here is play money and test tokens — nothing on this site is worth real money, and no wallet is ever needed to play.</p>
+        </section>
+
+        <section>
+          <h2>PICK YOUR <span class="accent">GAME</span></h2>
+          <p class="section-sub">Three games, one hamster. All free, all live off the real wheel.</p>
+          <div class="games">
+            <div class="game-card">
+              <img src="hamster.png" alt="Hamster with a basket">
+              <h3>SQUEEK SNACK DASH</h3>
+              <p>Catch the falling snacks, build your combo, dodge the cage bars. 60 seconds, 3 lives. Your score becomes snack coins for the shop.</p>
+              <div class="chips"><span class="chip gold">Catch game</span><span class="chip">60 seconds</span><span class="chip">Combo ×5</span></div>
+              <a class="play-btn" href="play.html">▶&nbsp; PLAY</a>
+            </div>
+            <div class="game-card">
+              <img src="hamster-fly.png" alt="Hamster with a parachute" onerror="this.style.display='none'">
+              <h3>SQUEEK FLY</h3>
+              <p>Flap through the cage bars and grab the SQK coins. The giant wheel behind the game spins along with the real one.</p>
+              <div class="chips"><span class="chip gold">Flappy-style</span><span class="chip">Endless</span><span class="chip">Live wheel</span></div>
+              <a class="play-btn" href="https://squeek-fly.vercel.app">▶&nbsp; PLAY</a>
+            </div>
+            <div class="game-card">
+              <img src="hamster-wheel.png" alt="Hamster running inside the wheel" onerror="this.style.display='none'">
+              <h3>NAP OR SPRINT</h3>
+              <p>Guess the hour Squeektoshi runs. Pick an hour, bet test coins — if he runs in that hour, you win 3×. Settled by the chain's real settlements.</p>
+              <div class="chips"><span class="chip gold">Prediction</span><span class="chip">Hourly</span><span class="chip">Win 3×</span></div>
+              <a class="play-btn" href="https://squeek-predict.vercel.app">▶&nbsp; PLAY</a>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>HOW TO <span class="accent">PLAY</span></h2>
+          <p class="section-sub">Snack Dash in three moves.</p>
+          <div class="cards">
+            <div class="card">
+              <span class="num">1</span>
+              <h3>Move</h3>
+              <p>Arrow keys, A / D, drag, or tap a side of the screen. The hamster follows you.</p>
+            </div>
+            <div class="card">
+              <span class="num">2</span>
+              <h3>Catch</h3>
+              <p>Coins are 10, berries 15, seeds 5. Three good catches in a row raise your combo — up to ×5. Missing one only drops it a level.</p>
+            </div>
+            <div class="card">
+              <span class="num">3</span>
+              <h3>Survive</h3>
+              <p>Cage bars cost a life. You have 3 lives and 60 seconds. Everything you catch goes to your inventory.</p>
+            </div>
+          </div>
+          <p class="section-sub" style="margin-top:14px">New: catch 🧲 magnet, 🛡️ shield and 🎡 2× wheel power-ups. Hit ×5 combo for 8 seconds of Fever (double points). When Squeektoshi finishes a round on the real wheel, a golden shower rains down.</p>
+        </section>
+      </div>
+
+      <!-- ============ INVENTORY ============ -->
+      <div id="tab-inventory" hidden>
+        <section>
+          <h2>YOUR <span class="accent">INVENTORY</span></h2>
+          <p class="section-sub">Everything you caught, earned and unlocked — saved on this device. Play more to fill it up.</p>
+          <div class="panel-box">
+            <div class="big-bank"><strong id="invBank">0</strong><span>snack coins in your pouch</span></div>
+            <div class="inv-grid">
+              <div class="inv-cell"><span>Games played</span><strong id="invGames">0</strong></div>
+              <div class="inv-cell"><span>Best score</span><strong id="invBest">0</strong></div>
+              <div class="inv-cell"><span>Best combo</span><strong id="invCombo">×1</strong></div>
+              <div class="inv-cell"><span>Snacks caught</span><strong id="invCaught">0</strong></div>
+              <div class="inv-cell"><span>Coins caught</span><strong id="invCoin">0</strong></div>
+              <div class="inv-cell"><span>Berries caught</span><strong id="invBerry">0</strong></div>
+              <div class="inv-cell"><span>Seeds caught</span><strong id="invSeed">0</strong></div>
+              <div class="inv-cell"><span>Skins owned</span><strong id="invSkins">1</strong></div>
+            </div>
+          </div>
+          <div class="panel-box" id="holderCard">
+            <h3 style="margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:13px">HOLDER PERKS 👑</h3>
+            <p style="margin:0 0 12px;font-size:14px;color:var(--muted)">Hold a Squeek NFT — in your wallet or staked — and unlock the Holder Hamster skin plus the Squeek Holder badge. Checked on-chain, live.</p>
+            <p id="holderStatus" style="margin:0 0 12px;font-size:14px;font-weight:800">Not connected.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="play-btn" id="holderConnect" type="button" style="padding:13px 20px 12px;font-size:12px;border:0;cursor:pointer">CONNECT WALLET</button>
+              <button class="ghost-btn" id="holderDisconnect" type="button" hidden>Disconnect</button>
+            </div>
+            <div id="holderPaste" hidden style="margin-top:12px">
+              <input id="holderAddr" type="text" placeholder="0x… wallet address" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:14px">
+              <button class="ghost-btn" id="holderCheck" type="button" style="margin-top:8px">Check this address</button>
+            </div>
+            <button class="ghost-btn" id="holderPasteToggle" type="button" style="margin-top:12px">Or paste an address instead</button>
+            <p style="margin:12px 0 0;font-size:12px;color:var(--muted)">Read-only — connecting only shows your address. No transaction, no gas, nothing is ever signed.</p>
+          </div>
+          <div class="panel-box">
+            <h3 style="margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:13px">BADGES</h3>
+            <div class="badge-grid" id="badgeGrid"></div>
+          </div>
+          <div class="panel-box">
+            <h3 style="margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:13px">YOUR HAMSTERS</h3>
+            <div class="badge-grid" id="skinGrid"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ SHOP ============ -->
+      <div id="tab-shop" hidden>
+        <section>
+          <h2>THE <span class="accent">SHOP</span></h2>
+          <p class="section-sub">Spend the snack coins you earned playing. New looks, and boosts for your next run.</p>
+          <div class="panel-box">
+            <div class="big-bank"><strong id="shopBank">0</strong><span>snack coins to spend</span></div>
+          </div>
+          <div class="panel-box">
+            <h3 style="margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:13px">HAMSTER LOOKS</h3>
+            <div class="shop-grid" id="skinShop"></div>
+          </div>
+          <div class="panel-box">
+            <h3 style="margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:13px">BOOSTS — ONE RUN EACH</h3>
+            <div class="shop-grid" id="powerShop"></div>
+          </div>
+          <p class="note">Play money only: snack coins are earned by playing Snack Dash, they are worth nothing, and nothing here needs a wallet or a payment. Boosts are used up when you start your next run.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div>Built by <strong>Apang6555</strong> with Love ❤️ for the Squeekchain Buildooooor badge.</div>
+      <div><a href="https://squeekchain.com">squeekchain.com</a> &nbsp;·&nbsp; <a href="https://docs.squeekchain.com/developers/">Docs</a> &nbsp;·&nbsp; <a href="https://sepolia.squeekchain.com">Sepolia app</a> &nbsp;·&nbsp; <a href="https://squeekchain.com/genesis/code">Builder board</a></div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <div id="walletModal" hidden style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(10,5,20,.7);padding:20px">
+    <div style="width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0;font-family:'Press Start 2P',monospace;font-size:13px">CONNECT WALLET</h3>
+        <button id="walletModalClose" type="button" style="background:none;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer">×</button>
+      </div>
+      <p style="margin:10px 0 14px;font-size:13px;color:var(--muted)">Pick a wallet. Read-only — no transaction, no gas, nothing is signed.</p>
+      <div id="walletList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button class="ghost-btn" id="walletModalPaste" type="button" style="margin-top:14px;width:100%">Or paste an address instead</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id)};
+
+  /* ---------- local save data (shared with play.html) ---------- */
+  var K={bank:'squeek-snack-bank',stats:'squeek-snack-stats',skins:'squeek-snack-skins',skin:'squeek-snack-skin',power:'squeek-snack-power',checkin:'squeek-snack-checkin',wallet:'squeek-snack-wallet'};
+  function readNum(k){try{return Number(localStorage.getItem(k)||0)||0}catch(e){return 0}}
+  function readJSON(k,fb){try{var v=JSON.parse(localStorage.getItem(k)||'null');return v==null?fb:v}catch(e){return fb}}
+  function write(k,v){try{localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}catch(e){}}
+  function stats(){return readJSON(K.stats,{games:0,best:0,bestCombo:1,coin:0,seed:0,berry:0,caught:0})}
+  function ownedSkins(){var s=readJSON(K.skins,['default']);if(s.indexOf('default')<0)s.unshift('default');return s}
+  function power(){return readJSON(K.power,{life:0,slow:0,double:0})}
+
+  var SKINS=[
+    {id:'default',name:'Classic Hamster',desc:'The original. Sunglasses, basket, zero worries.',price:0,filter:'none'},
+    {id:'golden',name:'Golden Hamster',desc:'Dipped in SQK. Shines on the dusk field.',price:500,filter:'sepia(.8) saturate(3) hue-rotate(-12deg) brightness(1.05)'},
+    {id:'berry',name:'Berry Hamster',desc:'Pink like the berries he eats. Very on brand.',price:300,filter:'hue-rotate(300deg) saturate(1.5)'},
+    {id:'mint',name:'Mint Hamster',desc:'Cool as a cucumber. Smells like fresh leaves.',price:300,filter:'hue-rotate(140deg) saturate(1.2)'},
+    {id:'shadow',name:'Shadow Hamster',desc:'Caught sneaking snacks at midnight.',price:400,filter:'brightness(.55) contrast(1.15)'},
+    {id:'holder',name:'Holder Hamster',desc:'Diamond shine, only for Squeek NFT holders. Verified on-chain.',price:0,filter:'brightness(1.35) contrast(1.15) saturate(.25)',holderOnly:true}
+  ];
+  var POWERS=[
+    {id:'life',name:'Extra Life',desc:'Start your next run with 4 lives instead of 3.',price:150},
+    {id:'slow',name:'Slow Snacks',desc:'Snacks fall 20% slower on your next run.',price:100},
+    {id:'double',name:'Double Points',desc:'Every catch scores double on your next run.',price:200}
+  ];
+  var BADGES=[
+    {id:'first',ico:'🍪',name:'First Snack',desc:'Catch your first snack.',ok:function(s){return s.caught>=1}},
+    {id:'combo',ico:'🔥',name:'Combo Chef',desc:'Reach a ×3 combo.',ok:function(s){return s.bestCombo>=3}},
+    {id:'century',ico:'💯',name:'Century',desc:'Score 100 in one run.',ok:function(s){return s.best>=100}},
+    {id:'hoarder',ico:'💰',name:'Hoarder',desc:'Hold 500 snack coins at once.',ok:function(s){return readNum(K.bank)>=500}},
+    {id:'berry',ico:'🫐',name:'Berry Hunter',desc:'Catch 10 berries in total.',ok:function(s){return s.berry>=10}},
+    {id:'marathon',ico:'🎮',name:'Marathon',desc:'Play 10 games.',ok:function(s){return s.games>=10}},
+    {id:'holder',ico:'👑',name:'Squeek Holder',desc:'Hold a Squeek NFT — in your wallet or staked.',ok:function(){return isHolder()}}
+  ];
+
+  /* ---------- tabs ---------- */
+  var tabBtns=document.querySelectorAll('.tab,[data-tab].logo');
+  function showTab(name){
+    ['home','inventory','shop'].forEach(function(t){
+      var el=$('tab-'+t);if(el)el.hidden=(t!==name);
+    });
+    document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.dataset.tab===name)});
+    if(name==='inventory')renderInventory();
+    if(name==='shop')renderShop();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  tabBtns.forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();showTab(b.dataset.tab)})});
+
+  /* ---------- toast ---------- */
+  var toastTimer=null;
+  function toast(msg){
+    var t=$('toast');t.textContent=msg;t.classList.add('show');
+    clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2200);
+  }
+
+  /* ---------- bank display ---------- */
+  function refreshBank(){
+    var b=readNum(K.bank);
+    $('bankPill').textContent=b;
+    if($('invBank'))$('invBank').textContent=b;
+    if($('shopBank'))$('shopBank').textContent=b;
+  }
+
+  /* ---------- daily check-in ---------- */
+  function dayStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+  function checkinState(){return readJSON(K.checkin,{last:null,streak:0,days:[]})}
+  function checkinReward(streak){return Math.min(25*streak,150)}
+  function renderCheckin(){
+    var c=checkinState();
+    var today=new Date(),tStr=dayStr(today);
+    var yest=new Date(today);yest.setDate(today.getDate()-1);
+    var claimed=c.last===tStr;
+    var continuing=c.last===dayStr(yest);
+    var showStreak=(claimed||continuing)?c.streak:0;
+    var nextStreak=claimed?c.streak:(continuing?c.streak+1:1);
+    var reward=checkinReward(nextStreak);
+    var sn=$('streakNum');if(sn)sn.textContent=showStreak;
+    var dots=$('checkinDots');
+    if(dots){
+      var html='';
+      for(var i=6;i>=0;i--){
+        var d=new Date(today);d.setDate(today.getDate()-i);
+        var ds=dayStr(d),hit=c.days.indexOf(ds)>=0;
+        html+='<i class="'+(hit?'hit':'')+(ds===tStr?' today':'')+'" title="'+ds+'"></i>';
+      }
+      dots.innerHTML=html;
+    }
+    var btn=$('checkinBtn'),note=$('checkinNote');
+    if(btn){btn.disabled=claimed;btn.textContent=claimed?'CHECKED IN ✓':'CHECK IN +'+reward}
+    if(note)note.textContent=claimed
+      ? 'Come back tomorrow to keep the streak alive.'
+      : 'Day '+nextStreak+' of your streak — claim +'+reward+' snack coins.';
+  }
+  function claimCheckin(){
+    var c=checkinState();
+    var today=new Date(),tStr=dayStr(today);
+    if(c.last===tStr)return;
+    var yest=new Date(today);yest.setDate(today.getDate()-1);
+    var ns=(c.last===dayStr(yest))?c.streak+1:1;
+    var reward=checkinReward(ns);
+    c.days.push(tStr);
+    write(K.checkin,{last:tStr,streak:ns,days:c.days.slice(-14)});
+    write(K.bank,readNum(K.bank)+reward);
+    refreshBank();
+    renderCheckin();
+    toast('Checked in! +'+reward+' snack coins — '+ns+'-day streak 🔥');
+  }
+
+  /* ---------- inventory ---------- */
+  function renderInventory(){
+    var s=stats();
+    $('invBank').textContent=readNum(K.bank);
+    $('invGames').textContent=s.games;
+    $('invBest').textContent=s.best;
+    $('invCombo').textContent='×'+s.bestCombo;
+    $('invCaught').textContent=s.caught;
+    $('invCoin').textContent=s.coin;
+    $('invBerry').textContent=s.berry;
+    $('invSeed').textContent=s.seed;
+    $('invSkins').textContent=ownedSkins().length;
+    var active=readJSON(K.skin,'default');
+    $('badgeGrid').innerHTML=BADGES.map(function(b){
+      var got=b.ok(s);
+      return '<div class="badge'+(got?' got':'')+'"><div class="b-ico">'+b.ico+'</div><h4>'+b.name+'</h4><p>'+(got?'Unlocked!':b.desc)+'</p></div>';
+    }).join('');
+    $('skinGrid').innerHTML=SKINS.filter(function(k){return ownedSkins().indexOf(k.id)>=0}).map(function(k){
+      return '<div class="badge'+(active===k.id?' got':'')+'"><div class="b-ico"><img src="hamster.png" alt="" style="width:44px;filter:'+k.filter+'"></div><h4>'+k.name+'</h4><p>'+(active===k.id?'Wearing it now':'Owned — equip it in the Shop')+'</p></div>';
+    }).join('');
+  }
+
+  /* ---------- shop ---------- */
+  function renderShop(){
+    refreshBank();
+    var owned=ownedSkins(),active=readJSON(K.skin,'default'),bal=readNum(K.bank),pw=power();
+    $('skinShop').innerHTML=SKINS.map(function(k){
+      var has=owned.indexOf(k.id)>=0,isActive=active===k.id,locked=k.holderOnly&&!isHolder();
+      var btn=isActive?'<button class="buy-btn equipped" disabled>Wearing it</button>'
+        :has?'<button class="buy-btn owned" data-equip="'+k.id+'">Wear it</button>'
+        :locked?'<button class="buy-btn" disabled>Holders only</button>'
+        :'<button class="buy-btn" data-buy-skin="'+k.id+'" '+(bal<k.price?'disabled':'')+'>Buy · '+k.price+' coins</button>';
+      var price=k.holderOnly?'Free · Holders only':(k.price===0?'Free':k.price+' coins');
+      return '<div class="shop-item"><div class="swatch"><img src="hamster.png" alt="" style="filter:'+k.filter+'"></div><h4>'+k.name+'</h4><p>'+k.desc+'</p><div class="price-row"><span class="price">'+price+'</span>'+btn+'</div></div>';
+    }).join('');
+    $('powerShop').innerHTML=POWERS.map(function(p){
+      var n=pw[p.id]||0;
+      return '<div class="shop-item"><div class="swatch" style="font-size:26px">⚡</div><h4>'+p.name+'</h4><p>'+p.desc+'</p><div class="price-row"><span class="price">'+p.price+' coins</span><span class="count-tag">Owned: '+n+'</span><button class="buy-btn" data-buy-power="'+p.id+'" '+(bal<p.price?'disabled':'')+'>Buy</button></div></div>';
+    }).join('');
+    document.querySelectorAll('[data-buy-skin]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var k=SKINS.find(function(x){return x.id===b.dataset.buySkin});
+        var bal=readNum(K.bank);
+        if(!k||bal<k.price)return;
+        if(k.holderOnly&&!isHolder()){toast('Holders only — connect a wallet holding a Squeek NFT.');return}
+        write(K.bank,bal-k.price);
+        var o=ownedSkins();o.push(k.id);write(K.skins,o);
+        write(K.skin,k.id);
+        toast('Bought '+k.name+' — wearing it now!');
+        renderShop();refreshBank();
+      });
+    });
+    document.querySelectorAll('[data-equip]').forEach(function(b){
+      b.addEventListener('click',function(){
+        write(K.skin,b.dataset.equip);
+        toast('Now wearing that look!');
+        renderShop();
+      });
+    });
+    document.querySelectorAll('[data-buy-power]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var p=POWERS.find(function(x){return x.id===b.dataset.buyPower});
+        var bal=readNum(K.bank);
+        if(!p||bal<p.price)return;
+        write(K.bank,bal-p.price);
+        var pw2=power();pw2[p.id]=(pw2[p.id]||0)+1;write(K.power,pw2);
+        toast('Bought '+p.name+' — ready for your next run!');
+        renderShop();refreshBank();
+      });
+    });
+  }
+
+  /* ---------- holder perks (connect wallet, on-chain check) ---------- */
+  var holder=readJSON(K.wallet,null);
+  var NFT='0xC4C7982657f00509548F3a3a41db7FA439a6856B',STAKING='0x50fd1780526C3186A0c037c7622203bC4fb611ca',RPC='https://ethereum-sepolia-rpc.publicnode.com';
+  function isHolder(){return !!(holder&&holder.isHolder)}
+  function shortAddr(a){return a?a.slice(0,6)+'…'+a.slice(-4):''}
+  async function rpcCall(to,data){
+    var r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:to,data:data},'latest']})});
+    var j=await r.json();if(!j.result||j.error)throw new Error('rpc');return j.result;
+  }
+  function renderHolder(state){
+    var st=$('holderStatus'),dc=$('holderDisconnect'),chip=$('walletChip');
+    if(chip){
+      if(state==='checking'){chip.textContent='Checking…';chip.classList.remove('on')}
+      else if(!holder){chip.textContent='CONNECT';chip.classList.remove('on')}
+      else{chip.textContent='👑 '+shortAddr(holder.address);chip.classList.add('on')}
+    }
+    if(!st)return;
+    if(state==='checking'){st.textContent='Checking the chain…';return}
+    if(state==='error'){st.textContent='Could not reach the chain — try again.';return}
+    if(!holder){st.textContent='Not connected.';if(dc)dc.hidden=true;return}
+    st.textContent='✓ Connected: '+shortAddr(holder.address)+' — wallet: '+holder.wallet+' NFT'+(holder.wallet===1?'':'s')+' · staked: '+holder.staked.toFixed(2)+' SQK'+(holder.isHolder?' — 👑 Holder verified! The Holder Hamster skin and badge are unlocked.':' — no Squeek NFT found on this wallet.');
+    if(dc)dc.hidden=false;
+  }
+  async function checkHolder(addr,silent){
+    addr=(addr||'').trim();
+    if(!/^0x[0-9a-fA-F]{40}$/.test(addr)){if(!silent)toast('That does not look like a wallet address.');return}
+    renderHolder('checking');
+    try{
+      var a=addr.slice(2).toLowerCase();
+      var balHex=await rpcCall(NFT,'0x70a08231000000000000000000000000'+a);
+      var stHex=await rpcCall(STAKING,'0x42623360000000000000000000000000'+a);
+      if(stHex.length<66)throw new Error('rpc');
+      var walletN=parseInt(balHex,16)||0;
+      var principal=BigInt('0x'+stHex.slice(2,66));
+      var staked=Number(principal)/1e18;
+      holder={address:addr.toLowerCase(),wallet:walletN,staked:staked,isHolder:walletN>0||principal>0n,checkedAt:Date.now()};
+      write(K.wallet,holder);
+      renderHolder();renderShop();renderInventory();
+      if(!silent)toast(holder.isHolder?'Holder verified — welcome! 👑':'No Squeek NFT found on this wallet.');
+    }catch(e){renderHolder('error');if(!silent)toast('Could not reach the chain — try again.')}
+  }
+  /* ---------- wallet picker modal (EIP-6963, no API) ---------- */
+  var eip6963=[];
+  window.addEventListener('eip6963:announceProvider',function(ev){
+    var d=ev.detail;
+    if(!d||!d.info||!d.provider)return;
+    if(eip6963.some(function(p){return p.info.uuid===d.info.uuid}))return;
+    eip6963.push(d);
+    if($('walletModal')&&!$('walletModal').hidden)renderWalletList();
+  });
+  function pasteFallback(msg){
+    closeWalletModal();showTab('inventory');
+    $('holderPaste').hidden=false;$('holderStatus').textContent=msg;
+    if($('holderCard'))$('holderCard').scrollIntoView({block:'center'});
+  }
+  function walletRow(icon,name,fn){
+    var b=document.createElement('button');
+    b.type='button';
+    b.style.cssText='display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:800;font-size:14px;cursor:pointer;text-align:left';
+    var img=icon?'<img src="'+icon+'" alt="" style="width:28px;height:28px;border-radius:8px">':'';
+    b.innerHTML=img+'<span style="flex:1">'+name+'</span><span style="font-size:11px;color:var(--gold);border:1px solid rgba(233,185,79,.45);border-radius:999px;padding:3px 8px">INSTALLED</span>';
+    b.addEventListener('click',fn);
+    return b;
+  }
+  function renderWalletList(){
+    var el=$('walletList');if(!el)return;
+    el.innerHTML='';
+    if(!eip6963.length&&!window.ethereum){
+      el.innerHTML='<div style="padding:14px;border:1px solid var(--line);border-radius:12px;font-size:14px;color:var(--muted)">No wallet found in this browser — open this site in your wallet app (MetaMask, Rabby), or paste your address below.</div>';
+      return;
+    }
+    eip6963.forEach(function(d){el.appendChild(walletRow(d.info.icon,d.info.name,function(){connectProvider(d.provider)}))});
+    if(window.ethereum&&!eip6963.some(function(d){return d.provider===window.ethereum})){
+      el.appendChild(walletRow('','Browser wallet',function(){connectProvider(window.ethereum)}));
+    }
+  }
+  function openWalletModal(){
+    var m=$('walletModal');if(!m)return;
+    m.hidden=false;eip6963=[];
+    window.dispatchEvent(new Event('eip6963:requestProvider'));
+    renderWalletList();setTimeout(renderWalletList,400);
+  }
+  function closeWalletModal(){var m=$('walletModal');if(m)m.hidden=true}
+  function connectWallet(){openWalletModal()}
+  async function connectProvider(pv){
+    try{
+      var accs=await Promise.race([pv.request({method:'eth_requestAccounts'}),new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'))},20000)})]);
+      closeWalletModal();
+      if(accs&&accs[0])checkHolder(accs[0]);
+    }catch(e){
+      if(e&&e.message==='timeout'){pasteFallback('Wallet did not respond — paste your address below instead.');toast('Wallet did not respond — paste your address instead.')}
+      else toast('Connection cancelled.');
+    }
+  }
+  function disconnectWallet(){
+    holder=null;write(K.wallet,null);
+    renderHolder();renderShop();renderInventory();
+    toast('Wallet disconnected.');
+  }
+
+  /* ---------- live wheel status (shown as game stats, no code) ---------- */
+  var lastDist=null,idlePolls=0,wheelRunning=false,haveVerdict=false;
+  async function refreshLive(){
+    try{
+      var r=await fetch('https://api.squeekchain.com/v1/status',{signal:AbortSignal.timeout(8000)});
+      if(!r.ok)throw new Error('bad status');
+      var j=await r.json();
+      var a=j.builder&&j.builder.anchor?j.builder.anchor:null;
+      var m=j.measurement||{};
+      if($('statBlock'))$('statBlock').textContent=a?a.blockHeight:'—';
+      if($('statRound'))$('statRound').textContent=a?a.settledThroughRound:'—';
+      if($('statWheel'))$('statWheel').textContent=(Number(m.distanceMm||0)/1e6).toFixed(1)+' km';
+      // coreStatus lies: it read IDLE while the wheel was turning
+      // (verified 2026-11-08: distanceMm rose ~20-30k per 30s with
+      // coreStatus stuck on IDLE). Running = the wheel actually moving.
+      var dist=Number(m.distanceMm||0);
+      var firstPoll=lastDist===null;
+      if(firstPoll){idlePolls=0}
+      else if(dist>lastDist){wheelRunning=true;idlePolls=0;haveVerdict=true}
+      else if(dist<lastDist){idlePolls=0}
+      else{idlePolls+=1;if(idlePolls>=2){wheelRunning=false;haveVerdict=true}}
+      lastDist=dist;
+      var running=wheelRunning;
+      if(haveVerdict){
+        if($('statStatus'))$('statStatus').textContent=running?'RUNNING':'IDLE';
+        var dot=$('statusDot'),txt=$('statusText');
+        if(dot)dot.className='dot '+(running?'run':'nap');
+        if(txt)txt.textContent=running?"🟢 Hamster's up and running! Snacks falling fast — go catch them.":"😴 Hamster's asleep. Don't just sit there — play a round.";
+      }
+      if($('liveNote'))$('liveNote').textContent='Live from the real wheel — updates every 30 seconds.';
+    }catch(e){
+      var txt2=$('statusText');
+      if(txt2)txt2.textContent='Could not reach the wheel — the game still plays fine.';
+    }
+  }
+  refreshLive();setInterval(refreshLive,30000);
+  refreshBank();
+  renderCheckin();
+  renderHolder();
+  if($('checkinBtn'))$('checkinBtn').addEventListener('click',claimCheckin);
+  if($('holderConnect'))$('holderConnect').addEventListener('click',connectWallet);
+  if($('walletModalClose'))$('walletModalClose').addEventListener('click',closeWalletModal);
+  if($('walletModal'))$('walletModal').addEventListener('click',function(e){if(e.target===$('walletModal'))closeWalletModal()});
+  if($('walletModalPaste'))$('walletModalPaste').addEventListener('click',function(){pasteFallback('Paste your address below to check it.')});
+  if($('walletChip'))$('walletChip').addEventListener('click',function(){if(holder){showTab('inventory')}else{connectWallet()}});
+  if($('holderDisconnect'))$('holderDisconnect').addEventListener('click',disconnectWallet);
+  if($('holderPasteToggle'))$('holderPasteToggle').addEventListener('click',function(){$('holderPaste').hidden=!$('holderPaste').hidden});
+  if($('holderCheck'))$('holderCheck').addEventListener('click',function(){checkHolder($('holderAddr').value)});
+  if(holder&&holder.address)checkHolder(holder.address,true);
+})();
+</script>
+</body>
+</html>

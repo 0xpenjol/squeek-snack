@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>Squeek Snack Dash</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --page:#1a0f2e;
+      --frame:#0d0716;
+      --ink:#fdf6ec;
+      --muted:#c9b8d8;
+      --panel:rgba(24,12,40,.96);
+      --panel-line:rgba(255,255,255,.16);
+      --primary:#e9b94f;
+      --primary-deep:#b8860b;
+      --button-ink:#241303;
+      --shadow:rgba(0,0,0,.5);
+      --hud:#241640;
+      --hud-ink:#fdf6ec;
+      --pink:#ff6fa5;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden}
+    body{
+      display:grid;
+      place-items:center;
+      background:var(--page);
+      font-family:"DM Sans",sans-serif;
+      overscroll-behavior:none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    button{font:inherit}
+    .stage{
+      position:relative;
+      width:min(100vw,420px,calc(100svh * .583333));
+      aspect-ratio:7/12;
+      overflow:hidden;
+      background:var(--frame);
+      box-shadow:0 18px 60px var(--shadow);
+      isolation:isolate;
+      touch-action:none;
+    }
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
+    .hud{
+      position:absolute;
+      z-index:3;
+      top:max(12px,env(safe-area-inset-top));
+      left:12px;
+      right:12px;
+      display:grid;
+      grid-template-columns:1fr auto 1fr auto;
+      gap:6px;
+      pointer-events:none;
+    }
+    .hud[hidden]{display:none}
+    .hud-cell{
+      background:var(--hud);
+      color:var(--hud-ink);
+      border:1px solid var(--panel-line);
+      border-radius:6px;
+      padding:6px 8px;
+      text-align:center;
+    }
+    .hud-cell span{display:block;font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+    .hud-cell strong{display:block;margin-top:3px;font-family:"Press Start 2P",monospace;font-size:13px;font-weight:400}
+    .hud-cell .hearts{font-size:13px;letter-spacing:2px}
+    .hud-cell.fever{background:#e9b94f;border-color:#ffd68c}
+    .hud-cell.fever span,.hud-cell.fever strong{color:#241303}
+    .power-row{
+      position:absolute;
+      z-index:3;
+      top:66px;
+      left:12px;
+      right:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .power-row[hidden]{display:none}
+    .chip{
+      padding:4px 10px;
+      border-radius:20px;
+      background:rgba(36,22,64,.92);
+      border:1px solid var(--panel-line);
+      color:var(--ink);
+      font-size:11px;
+      font-weight:800;
+    }
+    .overlay{
+      position:absolute;
+      z-index:4;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-end;
+      padding:26px 22px max(30px,calc(env(safe-area-inset-bottom) + 20px));
+      background:linear-gradient(to bottom,transparent 15%,rgba(13,7,22,.25) 45%,rgba(13,7,22,.78) 100%);
+      transition:opacity .22s ease,visibility .22s ease;
+    }
+    .overlay.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+    .overlay[hidden]{display:none}
+    .sheet{
+      position:relative;
+      width:100%;
+      padding:20px 20px 18px;
+      color:var(--ink);
+      background:var(--panel);
+      border:1px solid var(--panel-line);
+      border-radius:14px;
+      box-shadow:0 16px 38px rgba(0,0,0,.5);
+      text-align:center;
+    }
+    #startPanel .sheet::before{
+      content:"SQUEEKCHAIN  •  SEPOLIA TESTNET";
+      display:block;
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:9px;
+      font-weight:800;
+      letter-spacing:.11em;
+    }
+    h1,h2,p{margin:0}
+    h1,h2{font-family:"Press Start 2P",monospace;font-weight:400;line-height:1.5}
+    h1{font-size:17px;color:var(--primary)}
+    h2{font-size:16px;color:var(--primary)}
+    .subtitle{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.45}
+    .howto{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin:14px 0 15px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+    .primary{
+      width:100%;
+      border:0;
+      border-radius:10px;
+      padding:14px 18px 13px;
+      color:var(--button-ink);
+      background:linear-gradient(180deg,var(--primary),var(--primary-deep));
+      box-shadow:0 6px 0 #7a5510,0 12px 22px rgba(0,0,0,.4);
+      cursor:pointer;
+      font-family:"Press Start 2P",monospace;
+      font-size:13px;
+      line-height:1.4;
+      transition:transform .12s ease,box-shadow .12s ease;
+    }
+    .primary:active{transform:translateY(4px);box-shadow:0 2px 0 #7a5510,0 7px 14px rgba(0,0,0,.35)}
+    .primary:focus-visible{outline:3px solid #fff;outline-offset:3px}
+    .live{margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+    .fineprint{margin-top:6px;font-size:10px;line-height:1.5;color:var(--muted);opacity:.85}
+    .bonus-tag{
+      display:none;
+      margin-top:10px;
+      padding:6px 10px;
+      border-radius:6px;
+      background:rgba(233,185,79,.16);
+      border:1px solid rgba(233,185,79,.5);
+      color:var(--primary);
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.08em;
+    }
+    .bonus-tag.on{display:block}
+    .pouch{margin-top:10px;font-size:12px;font-weight:700;color:var(--muted)}
+    .result-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin:14px 0 12px;
+    }
+    .result{
+      padding:10px 8px 8px;
+      border-radius:10px;
+      background:rgba(255,255,255,.07);
+      border:1px solid var(--panel-line);
+    }
+    .result span{display:block;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .result strong{display:block;margin-top:4px;font-family:"Press Start 2P",monospace;font-size:18px;font-weight:400}
+    .new-best{margin:7px 0 0;color:var(--pink);font-family:"Press Start 2P",monospace;font-size:11px;min-height:15px}
+    .earned{margin:0 0 10px;color:var(--primary);font-weight:800;font-size:14px;min-height:19px}
+    .top-list{margin:4px 0 14px;text-align:left;font-size:12px;color:var(--muted)}
+    .top-list div{display:flex;justify-content:space-between;padding:3px 2px;border-bottom:1px dashed rgba(255,255,255,.12)}
+    .top-list div:first-child{color:var(--primary);font-weight:800}
+    .sound-toggle{
+      position:absolute;
+      z-index:5;
+      right:14px;
+      bottom:max(14px,env(safe-area-inset-bottom));
+      width:39px;height:39px;
+      display:grid;place-items:center;
+      border:1px solid rgba(255,255,255,.38);
+      border-radius:12px;
+      color:#fdf6ec;
+      background:rgba(36,22,64,.8);
+      box-shadow:0 5px 18px rgba(0,0,0,.3);
+      cursor:pointer;
+    }
+    .sound-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .sound-toggle .off{display:none}
+    .sound-toggle.muted .on{display:none}
+    .sound-toggle.muted .off{display:block}
+    @media (max-height:610px){
+      .overlay{padding:16px 18px max(18px,env(safe-area-inset-bottom))}
+      .sheet{padding:15px 17px 14px}
+      h1{font-size:14px}
+      .howto{margin:9px 0 10px}
+      .primary{padding:11px 16px 10px}
+    }
+    @media (min-width:500px) and (min-height:760px){.stage{border-radius:26px}}
+    @media (prefers-reduced-motion:reduce){.overlay,.primary{transition:none}}
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage" aria-label="Squeek Snack Dash game">
+    <canvas id="game" aria-label="Game area. Move left and right to catch falling snacks."></canvas>
+
+    <div class="hud" id="hud" hidden aria-live="polite">
+      <div class="hud-cell"><span>Score</span><strong id="score">0</strong></div>
+      <div class="hud-cell"><span>Combo</span><strong id="combo">x1</strong></div>
+      <div class="hud-cell"><span>Lives</span><strong class="hearts" id="lives">♥♥♥</strong></div>
+      <div class="hud-cell"><span>Time</span><strong id="time">60</strong></div>
+    </div>
+
+    <div class="power-row" id="powerRow" hidden></div>
+
+    <section class="overlay" id="startPanel">
+      <div class="sheet">
+        <h1>SQUEEK<br>SNACK DASH</h1>
+        <p class="subtitle">Catch the falling SQK. Dodge the cage bars. Don't let the snacks hit the ground.</p>
+        <div class="howto">← → move &nbsp;·&nbsp; drag or tap sides</div>
+        <div class="fineprint" style="margin-top:-4px">Catch 🧲 magnet · 🛡️ shield · 🎡 2× wheel &nbsp;·&nbsp; Fever at ×5 &nbsp;·&nbsp; Golden shower when a new block settles</div>
+        <button class="primary" id="startBtn" type="button">START CATCHING</button>
+        <div class="bonus-tag" id="bonusTag">🐹 SQUEEKTOSHI IS RUNNING — SNACKS FALL FASTER</div>
+        <div class="pouch" id="pouchLine"></div>
+        <div class="live" id="liveLine">CONNECTING TO THE WHEEL…</div>
+        <div class="fineprint">Community project for the Squeekchain Buildooooor badge · Sepolia testnet · Live data from the real wheel</div>
+      </div>
+    </section>
+
+    <section class="overlay is-hidden" id="endPanel" aria-live="assertive" hidden>
+      <div class="sheet">
+        <h2 id="endTitle">TIME'S UP!</h2>
+        <p class="new-best" id="newBest"></p>
+        <div class="result-row">
+          <div class="result"><span>Score</span><strong id="finalScore">0</strong></div>
+          <div class="result"><span>Best</span><strong id="finalBest">0</strong></div>
+        </div>
+        <p class="earned" id="earnedLine"></p>
+        <div class="top-list" id="topList"></div>
+        <button class="primary" id="retryBtn" type="button">PLAY AGAIN</button>
+      </div>
+    </section>
+
+    <button class="sound-toggle" id="soundBtn" type="button" aria-label="Mute sound" aria-pressed="false">
+      <svg class="on" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18 6a8 8 0 0 1 0 12"/></svg>
+      <svg class="off" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m17 9 5 5M22 9l-5 5"/></svg>
+    </button>
+  </main>
+
+<script>
+(function(){
+  'use strict';
+  const canvas=document.getElementById('game');
+  const hamsterImg=new Image(); hamsterImg.src='hamster.png';
+  const ctx=canvas.getContext('2d');
+  const stage=document.getElementById('stage');
+  const startPanel=document.getElementById('startPanel');
+  const endPanel=document.getElementById('endPanel');
+  const hud=document.getElementById('hud');
+  const scoreEl=document.getElementById('score');
+  const comboEl=document.getElementById('combo');
+  const livesEl=document.getElementById('lives');
+  const timeEl=document.getElementById('time');
+  const finalScore=document.getElementById('finalScore');
+  const finalBest=document.getElementById('finalBest');
+  const endTitle=document.getElementById('endTitle');
+  const newBest=document.getElementById('newBest');
+  const topList=document.getElementById('topList');
+  const soundBtn=document.getElementById('soundBtn');
+  const liveLine=document.getElementById('liveLine');
+  const bonusTag=document.getElementById('bonusTag');
+  const pouchLine=document.getElementById('pouchLine');
+  const earnedLine=document.getElementById('earnedLine');
+  const powerRow=document.getElementById('powerRow');
+
+  const W=420,H=720,GROUND_H=64;
+  let dpr=Math.min(window.devicePixelRatio||1,2.5);
+  function resize(){
+    dpr=Math.min(window.devicePixelRatio||1,2.5);
+    canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resize();
+  addEventListener('resize',resize,{passive:true});
+
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+
+  // Live wheel data from the official public API. Read-only; if it fails
+  // the game just plays at normal speed.
+  let wheelRunning=false,lastRound=null,lastBlock=null,lastDist=null,idlePolls=0,haveVerdict=false;
+  async function refreshLive(){
+    try{
+      const r=await fetch('https://api.squeekchain.com/v1/status',{signal:AbortSignal.timeout(8000)});
+      if(!r.ok)throw new Error('bad status');
+      const j=await r.json();
+      const a=j.builder&&j.builder.anchor?j.builder.anchor:null;
+      const m=j.measurement||{};
+      const block=a?a.blockHeight:'\u2014';
+      const round=a?a.settledThroughRound:'\u2014';
+      const km=(Number(m.distanceMm||0)/1e6).toFixed(1);
+      // coreStatus lies: it read IDLE while the wheel was turning
+      // (verified 2026-11-08: distanceMm rose ~20-30k per 30s with
+      // coreStatus stuck on IDLE). Running = the wheel actually moving.
+      const dist=Number(m.distanceMm||0);
+      const firstPoll=lastDist===null;
+      if(firstPoll){idlePolls=0}
+      else if(dist>lastDist){wheelRunning=true;idlePolls=0;haveVerdict=true}
+      else if(dist<lastDist){idlePolls=0}
+      else{idlePolls+=1;if(idlePolls>=2){wheelRunning=false;haveVerdict=true}}
+      lastDist=dist;
+      const running=haveVerdict?(wheelRunning?'RUNNING':'IDLE'):'…';
+      if(liveLine)liveLine.textContent='LIVE \u00b7 BLOCK '+block+' \u00b7 ROUND '+round+' \u00b7 WHEEL '+km+' km \u00b7 '+running;
+      if(bonusTag)bonusTag.classList.toggle('on',haveVerdict&&wheelRunning);
+      // A new Squeek block settled on-chain: rain golden coins.
+      const bNum=Number(block),rNum=Number(round);
+      if(lastRound!==null&&(!isNaN(rNum)&&!isNaN(bNum))&&(rNum>lastRound||bNum>lastBlock))triggerShower();
+      if(!isNaN(rNum))lastRound=rNum;
+      if(!isNaN(bNum))lastBlock=bNum;
+    }catch(e){
+      if(liveLine)liveLine.textContent='LIVE DATA UNAVAILABLE \u2014 PLAYING OFFLINE';
+      if(bonusTag)bonusTag.classList.remove('on');
+    }
+  }
+  refreshLive();setInterval(refreshLive,30000);
+
+  // Sounds (tiny synth, no assets).
+  let audio=null,muted=false;
+  try{muted=localStorage.getItem('squeek-snack-muted')==='1'}catch(e){}
+  if(muted){soundBtn.classList.add('muted');soundBtn.setAttribute('aria-pressed','true')}
+  function ensureAudio(){
+    if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)()}
+    if(audio.state==='suspended')audio.resume();
+  }
+  function tone(freq,duration,type,volume,slide){
+    if(muted)return;
+    try{
+      ensureAudio();
+      const o=audio.createOscillator(),g=audio.createGain();
+      o.type=type||'sine'; o.frequency.setValueAtTime(freq,audio.currentTime);
+      if(slide)o.frequency.exponentialRampToValueAtTime(slide,audio.currentTime+duration);
+      g.gain.setValueAtTime(volume||.04,audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
+      o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration);
+    }catch(e){}
+  }
+  const soundCatch=(c)=>tone(600+(c||1)*60,.09,'triangle',.05,990);
+  const soundCombo=()=>{tone(520,.08,'triangle',.05,780);setTimeout(()=>tone(660,.1,'triangle',.05,990),70)};
+  const soundGold=()=>{tone(880,.12,'sine',.06,1320);setTimeout(()=>tone(1174,.14,'sine',.05,1568),80)};
+  const soundHazard=()=>tone(160,.25,'sawtooth',.05,70);
+  const soundMiss=()=>tone(140,.12,'sine',.03,90);
+  const soundPower=()=>{tone(523,.1,'triangle',.05,784);setTimeout(()=>tone(784,.12,'triangle',.05,1046),90)};
+  const soundShield=()=>tone(1200,.15,'square',.03,900);
+  const soundFever=()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.06,1244),i*80))};
+  const soundShower=()=>{[784,988,1174,1568].forEach((f,i)=>setTimeout(()=>tone(f,.14,'sine',.05,1760),i*90))};
+  const soundOver=()=>{tone(392,.2,'triangle',.05,330);setTimeout(()=>tone(262,.3,'triangle',.05,196),180)};
+
+  const state={
+    mode:'start',time:0,elapsed:0,timeLeft:60,
+    score:0,combo:1,comboStreak:0,lives:3,
+    items:[],floats:[],spawn:0,shake:0,
+    fever:0,magnet:0,wheel:0,shield:false,shower:0,showerSpawn:0,
+    best:0,top5:[],
+    run:{coin:0,seed:0,berry:0},maxCombo:1
+  };
+  try{
+    state.best=Number(localStorage.getItem('squeek-snack-best')||0)||0;
+    state.top5=JSON.parse(localStorage.getItem('squeek-snack-top5')||'[]');
+  }catch(e){}
+
+  // Save data shared with the website (index.html): bank, stats, skins, boosts.
+  const SKIN_FILTERS={default:'none',golden:'sepia(.8) saturate(3) hue-rotate(-12deg) brightness(1.05)',berry:'hue-rotate(300deg) saturate(1.5)',mint:'hue-rotate(140deg) saturate(1.2)',shadow:'brightness(.55) contrast(1.15)',holder:'brightness(1.35) contrast(1.15) saturate(.25)'};
+  function lsNum(k){try{return Number(localStorage.getItem(k)||0)||0}catch(e){return 0}}
+  function lsJSON(k,fb){try{const v=JSON.parse(localStorage.getItem(k)||'null');return v==null?fb:v}catch(e){return fb}}
+  function lsSet(k,v){try{localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}catch(e){}}
+  function skinFilter(){return SKIN_FILTERS[lsJSON('squeek-snack-skin','default')]||'none'}
+  // Boosts active for this run (consumed when the run starts).
+  const boosts={life:false,slow:false,double:false};
+  function updatePouch(){
+    if(!pouchLine)return;
+    const pw=lsJSON('squeek-snack-power',{life:0,slow:0,double:0});
+    const ready=[];
+    if(pw.life>0)ready.push('Extra Life ×'+pw.life);
+    if(pw.slow>0)ready.push('Slow Snacks ×'+pw.slow);
+    if(pw.double>0)ready.push('Double Points ×'+pw.double);
+    pouchLine.textContent='Pouch: '+lsNum('squeek-snack-bank')+' snack coins'+(ready.length?' · Boosts ready: '+ready.join(', '):'');
+  }
+
+  const hamster={x:W/2,y:H-118,w:96,h:124,dir:0,target:null,tilt:0};
+  const keys={};
+
+  // Deterministic trees for the dusk forest backdrop.
+  const trees=Array.from({length:26},(_,i)=>({x:(i*37)%W,h:70+((i*53)%90),w:34+((i*29)%26)}));
+
+  function ellipse(x,y,rx,ry){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2)}
+  function rr(x,y,w,h,q){ctx.beginPath();ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath()}
+
+  function drawBackground(dt){
+    // Dusk sky: deep purple to orange horizon.
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#1c0b33');g.addColorStop(.45,'#57204d');g.addColorStop(.72,'#c65a3c');g.addColorStop(1,'#e08a4a');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    // Low sun.
+    const sun=ctx.createRadialGradient(W*.72,180,4,W*.72,180,70);
+    sun.addColorStop(0,'rgba(255,214,140,.95)');sun.addColorStop(.35,'rgba(255,170,90,.55)');sun.addColorStop(1,'rgba(255,170,90,0)');
+    ctx.fillStyle=sun;ellipse(W*.72,180,70,70);ctx.fill();
+    ctx.fillStyle='#ffd68c';ellipse(W*.72,180,26,26);ctx.fill();
+    // Stars up top.
+    ctx.fillStyle='rgba(255,255,255,.7)';
+    for(let i=0;i<24;i++){const sx=(i*97)%W,sy=(i*41)%150;ellipse(sx,sy,1.3,1.3);ctx.fill()}
+    // Wordmark.
+    ctx.save();
+    ctx.globalAlpha=.16;ctx.fillStyle='#fff';
+    ctx.font='400 54px "Press Start 2P",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('squeek',W/2,110);
+    ctx.restore();
+    // Tree silhouettes.
+    ctx.fillStyle='#160a26';
+    for(const t of trees){
+      ctx.beginPath();
+      ctx.moveTo(t.x-t.w/2,H-GROUND_H);
+      ctx.lineTo(t.x,H-GROUND_H-t.h);
+      ctx.lineTo(t.x+t.w/2,H-GROUND_H);
+      ctx.closePath();ctx.fill();
+    }
+    // Ground.
+    ctx.fillStyle='#241a12';ctx.fillRect(0,H-GROUND_H,W,GROUND_H);
+    ctx.fillStyle='#3d6b2f';ctx.fillRect(0,H-GROUND_H,W,8);
+    ctx.fillStyle='#2c4d22';
+    for(let x=0;x<W;x+=26){ctx.fillRect(x+((x*7)%9),H-GROUND_H+2,3,7)}
+  }
+
+  function drawHamster(){
+    const bob=Math.sin(state.time*6)*2;
+    // On the start screen the sheet covers the bottom of the canvas, so
+    // show the hamster above it instead of hidden behind it.
+    const hy=state.mode==='start'?H-430:hamster.y;
+    ctx.save();
+    ctx.translate(hamster.x,hy+bob);
+    ctx.rotate(hamster.tilt);
+    if(hamsterImg.complete&&hamsterImg.naturalWidth){
+      try{ctx.filter=skinFilter()}catch(e){}
+      ctx.drawImage(hamsterImg,-hamster.w/2,-hamster.h/2,hamster.w,hamster.h);
+      try{ctx.filter='none'}catch(e){}
+    }else{
+      ctx.fillStyle='#e8b06a';ellipse(0,0,40,46);ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawCoin(x,y,r){
+    const g=ctx.createLinearGradient(x-r,y-r,x+r,y+r);
+    g.addColorStop(0,'#ffe9a8');g.addColorStop(.55,'#e9b94f');g.addColorStop(1,'#c98a1b');
+    ctx.fillStyle=g;ctx.strokeStyle='#8a5f10';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='rgba(138,95,16,.6)';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.arc(x,y,r*.72,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#7a5510';ctx.font='800 '+Math.round(r*.95)+'px "DM Sans",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('S',x,y+.5);
+  }
+
+  function drawItem(it){
+    ctx.save();
+    if(it.type==='coin'){drawCoin(it.x,it.y,15)}
+    else if(it.type==='seed'){
+      ctx.fillStyle='#d9c48a';ctx.strokeStyle='#8a6f3c';ctx.lineWidth=1.5;
+      ellipse(it.x,it.y,9,12);ctx.fill();ctx.stroke();
+    }
+    else if(it.type==='berry'){
+      ctx.fillStyle='#e5484d';ctx.strokeStyle='#8f1d22';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(it.x,it.y,11,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#3d6b2f';ellipse(it.x+3,it.y-11,6,3);ctx.fill();
+    }
+    else if(it.type==='gold'){
+      drawCoin(it.x,it.y,18);
+      ctx.fillStyle='#fff';ctx.font='800 13px "DM Sans",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('★',it.x,it.y-26);
+    }
+    else if(it.type==='magnet'||it.type==='shield'||it.type==='wheel'){
+      const glow=it.type==='magnet'?'rgba(255,111,165,.9)':it.type==='shield'?'rgba(120,200,255,.9)':'rgba(233,185,79,.95)';
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(it.x,it.y,20,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#241640';ctx.beginPath();ctx.arc(it.x,it.y,16,0,Math.PI*2);ctx.fill();
+      ctx.font='17px "DM Sans",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(it.type==='magnet'?'🧲':it.type==='shield'?'🛡️':'🎡',it.x,it.y+1);
+    }
+    else{ // hazard: cage bar chunk
+      ctx.fillStyle='#16324f';ctx.strokeStyle='rgba(120,170,210,.5)';ctx.lineWidth=1.5;
+      rr(it.x-13,it.y-16,26,32,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='rgba(0,0,0,.35)';
+      ctx.fillRect(it.x-13,it.y-6,26,2);ctx.fillRect(it.x-13,it.y+4,26,2);
+    }
+    ctx.restore();
+  }
+
+  function drawFloats(){
+    ctx.save();
+    ctx.font='800 15px "DM Sans",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    for(const f of state.floats){
+      ctx.globalAlpha=Math.max(0,f.life);
+      ctx.fillStyle=f.color;
+      ctx.fillText(f.text,f.x,f.y);
+    }
+    ctx.restore();ctx.globalAlpha=1;
+  }
+
+  // A new Squeek block settled on-chain: rain golden coins.
+  function triggerShower(){
+    if(state.mode!=='play')return;
+    state.shower=3;state.showerSpawn=0;
+    soundShower();
+  }
+
+  function spawnItem(){
+    // Rare power-up: magnet, shield or 2x wheel. Not in the first seconds,
+    // and never two on screen at once.
+    const hasPower=state.items.some(it=>it.type==='magnet'||it.type==='shield'||it.type==='wheel');
+    if(state.elapsed>8&&!hasPower&&Math.random()<.05){
+      const p=['magnet','shield','wheel'][Math.floor(Math.random()*3)];
+      const speedMul=(1+state.elapsed/120)*(boosts.slow?0.8:1);
+      state.items.push({x:rand(24,W-24),y:-24,vy:rand(140,180)*speedMul,sway:rand(0,20),phase:rand(0,7),type:p});
+      return;
+    }
+    const roll=Math.random();
+    let type='coin';
+    if(roll<.42)type='coin';
+    else if(roll<.68)type='seed';
+    else if(roll<.80)type='berry';
+    else type='hazard';
+    const speedMul=(1+state.elapsed/120)*(boosts.slow?0.8:1);
+    state.items.push({
+      x:rand(24,W-24),y:-24,
+      vy:rand(150,215)*speedMul,
+      sway:rand(0,26),phase:rand(0,7),
+      type:type
+    });
+  }
+
+  function updateHUD(){
+    scoreEl.textContent=state.score;
+    comboEl.textContent='x'+state.combo;
+    comboEl.parentElement.classList.toggle('fever',state.fever>0);
+    livesEl.textContent='\u2665'.repeat(Math.max(0,state.lives))+'\u2661'.repeat(Math.max(0,3-state.lives));
+    timeEl.textContent=Math.max(0,Math.ceil(state.timeLeft));
+    if(powerRow){
+      const chips=[];
+      if(state.magnet>0)chips.push('🧲 '+Math.ceil(state.magnet)+'s');
+      if(state.shield)chips.push('🛡️ ON');
+      if(state.wheel>0)chips.push('🎡 2× '+Math.ceil(state.wheel)+'s');
+      if(state.fever>0)chips.push('🔥 FEVER '+Math.ceil(state.fever)+'s');
+      powerRow.innerHTML=chips.map(c=>'<span class="chip">'+c+'</span>').join('');
+      powerRow.hidden=chips.length===0;
+    }
+  }
+
+  function addFloat(x,y,text,color){
+    state.floats.push({x,y,text,color,life:1});
+  }
+
+  function endGame(reason){
+    if(state.mode!=='play')return;
+    state.mode='over';
+    soundOver();
+    const isBest=state.score>state.best;
+    if(isBest){
+      state.best=state.score;
+      try{localStorage.setItem('squeek-snack-best',String(state.best))}catch(e){}
+    }
+    try{
+      state.top5.push({score:state.score,at:new Date().toISOString().slice(0,10)});
+      state.top5.sort((a,b)=>b.score-a.score);
+      state.top5=state.top5.slice(0,5);
+      localStorage.setItem('squeek-snack-top5',JSON.stringify(state.top5));
+    }catch(e){}
+    // Bank the score as snack coins and record run stats for the website.
+    const earned=state.score;
+    lsSet('squeek-snack-bank',lsNum('squeek-snack-bank')+earned);
+    const st=lsJSON('squeek-snack-stats',{games:0,best:0,bestCombo:1,coin:0,seed:0,berry:0,caught:0});
+    st.games+=1;st.best=Math.max(st.best,state.score);st.bestCombo=Math.max(st.bestCombo,state.maxCombo);
+    st.coin+=state.run.coin;st.seed+=state.run.seed;st.berry+=state.run.berry;
+    st.caught+=state.run.coin+state.run.seed+state.run.berry;
+    lsSet('squeek-snack-stats',st);
+    if(earnedLine)earnedLine.textContent='+'+earned+' snack coins banked · pouch now '+lsNum('squeek-snack-bank')+' — spend them in the Shop';
+    updatePouch();
+    endTitle.textContent=reason==='lives'?"OUT OF LIVES!":"TIME'S UP!";
+    newBest.textContent=isBest?'NEW BEST!':'';
+    finalScore.textContent=state.score;
+    finalBest.textContent=state.best;
+    topList.innerHTML=state.top5.length
+      ? state.top5.map((t,i)=>'<div><span>'+(i+1)+'. '+t.at+'</span><strong>'+t.score+'</strong></div>').join('')
+      : '<div><span>No scores yet on this device</span><span></span></div>';
+    hud.hidden=true;
+    endPanel.hidden=false;
+    requestAnimationFrame(()=>endPanel.classList.remove('is-hidden'));
+  }
+
+  function startGame(){
+    // Consume one of each owned boost for this run.
+    const pw=lsJSON('squeek-snack-power',{life:0,slow:0,double:0});
+    boosts.life=pw.life>0;boosts.slow=pw.slow>0;boosts.double=pw.double>0;
+    if(boosts.life)pw.life-=1;
+    if(boosts.slow)pw.slow-=1;
+    if(boosts.double)pw.double-=1;
+    lsSet('squeek-snack-power',pw);
+    state.mode='play';
+    state.elapsed=0;state.timeLeft=60;
+    state.score=0;state.combo=1;state.comboStreak=0;state.lives=boosts.life?4:3;
+    state.run={coin:0,seed:0,berry:0};state.maxCombo=1;
+    state.items=[];state.floats=[];state.spawn=0;state.shake=0;
+    state.fever=0;state.magnet=0;state.wheel=0;state.shield=false;state.shower=0;state.showerSpawn=0;
+    hamster.x=W/2;hamster.target=null;
+    updateHUD();
+    hud.hidden=false;
+    startPanel.classList.add('is-hidden');
+    endPanel.classList.add('is-hidden');
+    setTimeout(()=>{startPanel.hidden=true;endPanel.hidden=true},240);
+    ensureAudio();
+  }
+
+  function update(dt){
+    state.time+=dt;
+    if(state.mode==='play'){
+      state.elapsed+=dt;
+      state.timeLeft-=dt;
+      if(state.timeLeft<=0){state.timeLeft=0;updateHUD();endGame('time');return}
+
+      // Power-up and fever timers.
+      if(state.fever>0){state.fever-=dt;if(state.fever<=0){state.fever=0;updateHUD()}}
+      if(state.magnet>0)state.magnet=Math.max(0,state.magnet-dt);
+      if(state.wheel>0)state.wheel=Math.max(0,state.wheel-dt);
+      if(state.shower>0){
+        state.shower-=dt;
+        state.showerSpawn-=dt;
+        if(state.showerSpawn<=0){
+          state.items.push({x:rand(24,W-24),y:-24,vy:rand(130,175)*(boosts.slow?0.8:1),sway:rand(0,18),phase:rand(0,7),type:'gold'});
+          state.showerSpawn=.18;
+        }
+      }
+      if(state.fever>0||state.magnet>0||state.wheel>0||state.shower>0)updateHUD();
+
+      // Movement: keys or drag.
+      const speed=430;
+      if(keys.ArrowLeft||keys.KeyA)hamster.x-=speed*dt;
+      if(keys.ArrowRight||keys.KeyD)hamster.x+=speed*dt;
+      if(hamster.target!==null){
+        hamster.x+=(hamster.target-hamster.x)*Math.min(1,dt*14);
+        if(Math.abs(hamster.target-hamster.x)<2)hamster.target=null;
+      }
+      hamster.x=clamp(hamster.x,52,W-52);
+      const targetTilt=clamp(((keys.ArrowRight||keys.KeyD)?1:0)-((keys.ArrowLeft||keys.KeyA)?1:0),-1,1)*.12;
+      hamster.tilt+=(targetTilt-hamster.tilt)*Math.min(1,dt*10);
+
+      // Spawn: faster over time, faster still while the real wheel runs.
+      const rate=(wheelRunning?1.25:1)*(1+state.elapsed/150);
+      state.spawn-=dt;
+      if(state.spawn<=0){
+        spawnItem();
+        state.spawn=rand(.55,.9)/rate;
+      }
+
+      // Items fall; catch or miss.
+      const catchY=hamster.y-40, catchX=58;
+      for(const it of state.items){
+        it.y+=it.vy*dt;
+        it.x+=Math.sin(state.time*2+it.phase)*it.sway*dt;
+        // Magnet pulls nearby snacks toward the basket.
+        if(state.magnet>0&&it.type!=='hazard'&&it.type!=='magnet'&&it.type!=='shield'&&it.type!=='wheel'){
+          it.x+=(hamster.x-it.x)*Math.min(1,dt*4);
+        }
+        if(it.y>=catchY-14&&it.y<=catchY+46&&Math.abs(it.x-hamster.x)<catchX){
+          it.caught=true;
+          if(it.type==='hazard'){
+            if(state.shield){
+              state.shield=false;
+              addFloat(it.x,catchY-30,'BLOCKED!','#78c8ff');
+              soundShield();
+            }else{
+              state.lives-=1;state.combo=1;state.comboStreak=0;state.shake=.35;
+              addFloat(it.x,catchY-30,'OUCH!','#ff6fa5');
+              soundHazard();
+            }
+          }else if(it.type==='magnet'||it.type==='shield'||it.type==='wheel'){
+            if(it.type==='magnet'){state.magnet=8;addFloat(it.x,catchY-30,'MAGNET!','#ff6fa5')}
+            if(it.type==='shield'){state.shield=true;addFloat(it.x,catchY-30,'SHIELD!','#78c8ff')}
+            if(it.type==='wheel'){state.wheel=10;addFloat(it.x,catchY-30,'2× POINTS!','#e9b94f')}
+            soundPower();
+          }else{
+            const base=it.type==='coin'?10:it.type==='berry'?15:it.type==='gold'?25:5;
+            const pts=base*state.combo*(boosts.double?2:1)*(state.fever>0?2:1)*(state.wheel>0?2:1);
+            state.score+=pts;
+            state.run[it.type==='gold'?'coin':it.type]+=1;
+            state.comboStreak+=1;
+            if(state.comboStreak>=3&&state.combo<5){state.combo+=1;state.comboStreak=0;soundCombo()}
+            if(state.combo>=5&&state.fever<=0){state.fever=8;soundFever();addFloat(W/2,180,'FEVER ×2!','#ffd68c')}
+            state.maxCombo=Math.max(state.maxCombo,state.combo);
+            addFloat(it.x,catchY-30,'+'+pts,'#e9b94f');
+            if(it.type==='gold')soundGold();else soundCatch(state.combo);
+          }
+          updateHUD();
+        }else if(it.y>H-GROUND_H+10){
+          it.missed=true;
+          if(it.type!=='hazard'&&it.type!=='gold'&&it.type!=='magnet'&&it.type!=='shield'&&it.type!=='wheel'){
+            if(state.combo>1)state.combo-=1;state.comboStreak=0;updateHUD();
+            soundMiss();
+          }
+        }
+      }
+      state.items=state.items.filter(it=>!it.caught&&!it.missed);
+      if(state.lives<=0){updateHUD();endGame('lives');return}
+    }
+
+    for(const f of state.floats){f.y-=34*dt;f.life-=dt*1.4}
+    state.floats=state.floats.filter(f=>f.life>0);
+    if(state.shake>0)state.shake=Math.max(0,state.shake-dt);
+  }
+
+  function draw(){
+    ctx.save();
+    if(state.shake>0)ctx.translate(rand(-4,4)*state.shake,rand(-4,4)*state.shake);
+    drawBackground();
+    for(const it of state.items)drawItem(it);
+    drawHamster();
+    // Shield ring around the hamster.
+    if(state.shield&&state.mode==='play'){
+      ctx.save();ctx.strokeStyle='rgba(120,200,255,.9)';ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(hamster.x,hamster.y,72,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    // Fever gold glow + banner.
+    if(state.fever>0&&state.mode==='play'){
+      const pulse=.10+.06*Math.sin(state.time*8);
+      const fg=ctx.createRadialGradient(W/2,H/2,80,W/2,H/2,420);
+      fg.addColorStop(0,'rgba(233,185,79,0)');fg.addColorStop(1,'rgba(233,185,79,'+pulse+')');
+      ctx.fillStyle=fg;ctx.fillRect(0,0,W,H);
+      ctx.save();ctx.globalAlpha=.75+.25*Math.sin(state.time*8);
+      ctx.fillStyle='#ffd68c';ctx.font='400 22px "Press Start 2P",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('FEVER ×2',W/2,92);ctx.restore();
+    }
+    // Block-settled shower banner.
+    if(state.shower>0&&state.mode==='play'){
+      ctx.save();ctx.fillStyle='#ffd68c';ctx.font='400 15px "Press Start 2P",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('BLOCK SETTLED!',W/2,130);ctx.restore();
+    }
+    drawFloats();
+    ctx.restore();
+  }
+
+  let last=performance.now();
+  function loop(now){
+    const dt=Math.min(.05,(now-last)/1000);last=now;
+    update(dt);draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Input: keyboard, pointer drag, tap sides.
+  addEventListener('keydown',e=>{
+    if(e.code==='ArrowLeft'||e.code==='ArrowRight'||e.code==='KeyA'||e.code==='KeyD'){
+      keys[e.code]=true;
+      if(state.mode==='play')e.preventDefault();
+    }
+    if((e.code==='Space'||e.code==='Enter')&&state.mode!=='play'){e.preventDefault();startGame()}
+  });
+  addEventListener('keyup',e=>{keys[e.code]=false});
+  function pointerToX(e){
+    const r=stage.getBoundingClientRect();
+    return clamp((e.clientX-r.left)/r.width*W,52,W-52);
+  }
+  stage.addEventListener('pointerdown',e=>{
+    if(state.mode!=='play')return;
+    hamster.target=pointerToX(e);
+    e.preventDefault();
+  },{passive:false});
+  stage.addEventListener('pointermove',e=>{
+    if(state.mode!=='play')return;
+    if(e.buttons)hamster.target=pointerToX(e);
+  });
+  document.getElementById('startBtn').addEventListener('click',startGame);
+  document.getElementById('retryBtn').addEventListener('click',startGame);
+  soundBtn.addEventListener('click',()=>{
+    muted=!muted;
+    soundBtn.classList.toggle('muted',muted);
+    soundBtn.setAttribute('aria-pressed',String(muted));
+    try{localStorage.setItem('squeek-snack-muted',muted?'1':'0')}catch(e){}
+  });
+
+  updateHUD();
+  updatePouch();
+})();
+</script>
+</body>
+</html>
